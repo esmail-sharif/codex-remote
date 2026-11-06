@@ -1,118 +1,62 @@
 ---
-title: Install Codex Remote on your computer
-description: Install the built Codex Remote release without sudo, register its plugin, configure PATH, and pair the ChatGPT phone app.
+title: Install the Ridan Korea audit profile
+description: Install the restricted Codex Remote plugin for a dedicated read-only Ridan Korea audit environment.
 permalink: /install/
 ---
 {% include nav.html %}
 
-# Install Codex Remote on your computer
+# Install the Ridan Korea audit profile
 
-These steps install the CLI into your user account and register its plugin with Codex. You do not need to build the source, create an API key, or install the separate Codex Folders launcher.
+Install this branch under a dedicated, unprivileged Linux account that has read-only access to a sanitized source snapshot. Do not install it under the PM2 production user or root.
 
-## 1. Check the requirements
+## Requirements
 
-Install [Node.js 24+ with npm](https://nodejs.org/en/download) and [Codex CLI](https://learn.chatgpt.com/docs/cli/). Sign Codex in with ChatGPT using your usual account. Check:
+- Ubuntu 24.04 ARM64 or another tested Linux environment.
+- Node.js 24+ for this audit user only.
+- Codex CLI authenticated in this dedicated user's own `CODEX_HOME`.
+- ChatGPT mobile signed in with the same account and workspace.
+- A compatible native Codex remote managed-server interface.
 
-```sh
-node --version
-codex --version
-```
+Keep the production Ridan Korea Node.js 22 runtime and PM2 service unchanged.
 
-Use any operating system where Codex exposes the required native managed-server remote interface. Linux with Codex **0.163.0** is the tested baseline. macOS, Windows, and other operating systems are untested; installing the package alone does not verify native compatibility.
+## Build and install
 
-Install the official ChatGPT app on your phone and sign in with the same account and workspace. Some accounts or organizations may restrict remote access.
-
-## 2. Install the built release
-
-For **Bash/Zsh on Linux or macOS**, run this in your regular terminal:
+From a clean checkout of this branch:
 
 ```sh
+npm ci
+npm run build
+npm install --global --prefix "$HOME/.local" --ignore-scripts .
 export PATH="$HOME/.local/bin:$PATH"
-curl --fail --location --output codex-remote-0.2.1.tgz \
-  {{ site.release_url }}
-npm install --global --prefix "$HOME/.local" --ignore-scripts ./codex-remote-0.2.1.tgz
 codex-remote install
 ```
 
-For **PowerShell on Windows (untested)**:
+Open a new Codex terminal so the restricted plugin loads. Only `remote_status` and `remote_pair` appear by default.
 
-```powershell
-Invoke-WebRequest -Uri {{ site.release_url }} -OutFile codex-remote-0.2.1.tgz
-npm install --global --ignore-scripts .\codex-remote-0.2.1.tgz
-codex-remote install
+## Pair the phone
+
+Ask Codex **“Show the QR for remote session pairing”** only when you intend to enable persistent remote access. Scan the short-lived QR with the ChatGPT mobile app, using the same account and workspace as the dedicated Codex session.
+
+A QR request enables persistent native remote access and it stays enabled until an operator disables it locally. Keep pairing credentials private.
+
+## Do not skip the audit sandbox
+
+Configure the dedicated user's `$CODEX_HOME/config.toml` with:
+
+```toml
+sandbox_mode = "read-only"
+approval_policy = "never"
+allow_login_shell = false
 ```
 
-The Bash/Zsh installation uses your user directory; the PowerShell installation uses npm's default global prefix. Downloading first and installing the local archive works with npm 12's default restriction on direct URL installs. You can also download the `.tgz` from the release page in your browser and install that local file.
+Also enforce read-only project access and exclude all secrets at the Linux filesystem level. Follow the [Ridan Korea audit deployment guide](https://github.com/esmail-sharif/codex-remote/blob/ridankorea-audit-only/docs/ridankorea-audit-mode.md) before using this on the production server.
 
-The `.tgz` release already includes the built CLI and hidden plugin manifests. GitHub's automatic **Source code ZIP** is for development and does not include the built CLI.
+## Disable remote access
 
-The install command registers the bundled `codex-remote-local` marketplace and `codex-remote` plugin in your selected Codex home. It does not enable remote access or restart the server.
-
-## 3. Pair your phone
+The agent's default MCP surface deliberately lacks an administrative disable tool. From a trusted local operator shell, run:
 
 ```sh
-codex-remote qr
+CODEX_REMOTE_ENABLE_ADMIN_TOOLS=1 codex-remote disable
 ```
 
-Scan the QR or open the printed link on your phone, complete setup in ChatGPT, and then check:
-
-```sh
-codex-remote status
-codex-remote devices list
-```
-
-Requesting a pairing code enables persistent remote access if needed. Access stays enabled until you run `codex-remote disable`. [Pairing walkthrough]({{ '/pairing/' | relative_url }})
-
-## 4. Use it conversationally
-
-Open a **new Codex terminal** so it loads the installed plugin. Keep existing conversations running. Ask:
-
-> Show the QR for remote session pairing.
-
-For an already paired phone, ask **“Check my remote connection”** to inspect status without generating another code.
-
-## Optional: enable `/qr` and autocomplete
-
-Install [Codex Command Extensions](https://github.com/Cheaux/codex-command-extensions), then run:
-
-```sh
-codex-remote terminal enable
-```
-
-Open a new Codex terminal and type `/q` to see `/qr`. Folders is not required. The shared host currently supports Linux/macOS with Python 3; its Windows terminal backend is not implemented. Conversational pairing and the standalone CLI do not require it.
-
-The host owns one launcher and its command menu. Remote and Folders register independently, so disabling one feature leaves the other available. Use `codex-remote terminal disable` to remove only `/qr`.
-
-## Make the command available in future terminals
-
-For the Bash/Zsh installation, if `codex-remote` is not found in a fresh terminal, put this line in the startup file for the shell you actually use:
-
-```sh
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-For Zsh, edit `~/.zshrc`. For Bash, edit `~/.bashrc`. Add the line once, save, then open a new terminal. For the Windows installation, run `npm prefix --global` and check that directory is on PATH, then reopen your terminal. Also make sure `codex` remains available on PATH. [PATH troubleshooting]({{ '/troubleshooting/' | relative_url }}#command-not-found)
-
-## Update
-
-Copy the installation command from the [latest release](https://github.com/Cheaux/codex-remote/releases/latest), then run `codex-remote install` again. Open a new Codex terminal to load updated tools. Installed numbered releases do not update themselves.
-
-## Uninstall
-
-If you enabled `/qr`, first run `codex-remote terminal disable` to unregister it. To turn off remote access as well as remove the plugin, run:
-
-```sh
-codex-remote disable
-```
-
-Then remove the plugin, marketplace, and CLI:
-
-```sh
-codex plugin remove codex-remote@codex-remote-local
-codex plugin marketplace remove codex-remote-local
-npm uninstall --global --prefix "$HOME/.local" codex-remote
-```
-
-Uninstallation alone preserves native remote preferences and device pairings. Use `devices revoke DEVICE_ID` before uninstalling if you also want to remove a particular paired device.
-
-For the Windows default-prefix installation, use `npm uninstall --global codex-remote` after the same plugin and marketplace removal commands.
+Do not set the admin opt-in in the default audit MCP environment.

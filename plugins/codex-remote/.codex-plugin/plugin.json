@@ -1,7 +1,7 @@
 {
   "name": "codex-remote",
   "version": "0.2.1",
-  "description": "Pair ChatGPT Android or iPhone with terminal Codex and manage remote access without restarting sessions.",
+  "description": "Restricted Codex phone pairing for Ridan Korea audit sessions.",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "license": "MIT",
@@ -9,42 +9,41 @@
     "name": "Cheaux",
     "url": "https://github.com/Cheaux"
   },
-  "homepage": "https://github.com/Cheaux/codex-remote",
-  "repository": "https://github.com/Cheaux/codex-remote",
+  "homepage": "https://github.com/esmail-sharif/codex-remote/tree/ridankorea-audit-only",
+  "repository": "https://github.com/esmail-sharif/codex-remote",
   "keywords": [
     "codex",
     "codex-cli",
-    "codex-plugin",
     "chatgpt",
     "remote-control",
     "android",
     "phone-pairing",
     "mcp",
     "linux",
-    "qr-code"
+    "qr-code",
+    "read-only-audit"
   ],
   "requires_local_executor": true,
   "interface": {
-    "displayName": "Codex Remote",
-    "shortDescription": "Pair Codex with your phone",
-    "longDescription": "Pair terminal Codex on your computer with the official ChatGPT app on Android or iPhone. Show a short-lived pairing QR, check remote-access status, and manage paired devices through six local MCP tools. Access uses the existing native Codex service and stays enabled until explicitly disabled. Existing sessions and pairings are preserved when a new QR is requested. Requires the standalone Codex Remote CLI, Node 24+, and a compatible native Codex remote-control interface. Linux/Android existing-chat messaging is verified; other platforms and new phone-created threads remain unverified. Optional /qr autocomplete requires Codex Command Extensions. Community project by Cheaux; not maintained or endorsed by OpenAI.",
+    "displayName": "Ridan Korea Audit Remote",
+    "shortDescription": "Restricted phone pairing for read-only audits",
+    "longDescription": "Restricted profile for pairing the ChatGPT phone app with Codex CLI on a dedicated audit account. The default agent surface contains only relay status and an explicitly requested QR pairing action. Pairing enables persistent native remote access. Administrative enable/disable and paired-device management tools are hidden by default and require an operator environment opt-in. Terminal Extensions are separately disabled by default. This plugin does not itself sandbox filesystem access: configure Codex read-only mode and enforce project/secret separation with Linux permissions. Node.js 24+ and a compatible native Codex remote-control interface are required. Community project based on Cheaux/codex-remote; not maintained or endorsed by OpenAI.",
     "developerName": "Cheaux",
     "category": "Developer Tools",
     "capabilities": [
-      "ChatGPT phone pairing",
-      "Remote-access status",
-      "Paired-device management"
+      "Read native relay status",
+      "Request an explicitly authorized phone pairing QR"
     ],
-    "websiteURL": "https://github.com/Cheaux/codex-remote",
-    "supportURL": "https://github.com/Cheaux/codex-remote/issues",
-    "privacyPolicyURL": "https://github.com/Cheaux/codex-remote/blob/main/PRIVACY.md",
-    "termsOfServiceURL": "https://github.com/Cheaux/codex-remote/blob/main/TERMS.md",
+    "websiteURL": "https://github.com/esmail-sharif/codex-remote/tree/ridankorea-audit-only",
+    "supportURL": "https://github.com/esmail-sharif/codex-remote/issues",
+    "privacyPolicyURL": "https://github.com/esmail-sharif/codex-remote/blob/ridankorea-audit-only/PRIVACY.md",
+    "termsOfServiceURL": "https://github.com/esmail-sharif/codex-remote/blob/ridankorea-audit-only/TERMS.md",
     "defaultPrompt": [
       "Show the QR for remote session pairing.",
-      "Check whether my phone is paired with this Codex host."
+      "Check the native remote relay status."
     ],
     "logo": "./assets/icon.svg",
     "composerIcon": "./assets/icon.svg",
-    "brandColor": "#202b3c"
+    "brandColor": "#071B33"
   }
 }
