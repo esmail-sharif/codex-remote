@@ -67,7 +67,9 @@ test('built CLI emits clean machine-readable status, pairing and validation erro
   await assert.rejects(run(['disable', '--json']), (error: any) => JSON.parse(error.stdout).error.code === 'feature_disabled');
   await assert.rejects(run(['terminal', 'enable', '--json']), (error: any) => JSON.parse(error.stdout).error.code === 'feature_disabled');
   assert.match((await run(['--help'], { CODEX_REMOTE_ENABLE_ADMIN_TOOLS: '1' })).stdout, /codex-remote disable/);
-  await assert.rejects(run(['devices', 'revoke', '--json']), (error: any) => { assert.equal(error.code, 1); assert.equal(JSON.parse(error.stdout).error.code, 'feature_disabled'); return true; });
+  await assert.rejects(run(['devices', 'list', '--json']), (error: any) => { assert.equal(error.code, 1); assert.equal(JSON.parse(error.stdout).error.code, 'feature_disabled'); return true; });
+  const adminDevices = JSON.parse((await run(['devices', 'list', '--json'], { CODEX_REMOTE_ENABLE_ADMIN_TOOLS: '1' })).stdout);
+  assert.equal(adminDevices.devices[0].clientId, 'phone-one', 'explicit operator opt-in restores CLI device management');
   await assert.rejects(run(['qr', 'unexpected', '--json']), (error: any) => { assert.equal(JSON.parse(error.stdout).error.code, 'invalid_arguments'); return true; });
 });
 test('packaged stdio MCP is callable without stdout diagnostics contaminating the protocol', async t => {
