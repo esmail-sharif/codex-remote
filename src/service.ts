@@ -48,13 +48,9 @@ export class RemoteService {
     } while (cursor);
     return clients;
   }
-  private async summary(info: DaemonInfo, rpc: Rpc, remote: NativeRemote): Promise<Status> {
-    const result: Status = { daemon: 'running', ...remote, cliVersion: info.cliVersion, appServerVersion: info.appServerVersion, pairing: 'unknown', pairedDevices: null };
-    if (remote.status === 'connected' && remote.environmentId) {
-      try { const devices = await this.clients(rpc, remote.environmentId); result.pairedDevices = devices.length; result.pairing = devices.length ? 'paired' : 'unpaired'; }
-      catch (error) { result.diagnostic = `Relay status is available, but paired devices could not be checked: ${error instanceof Error ? error.message : 'unknown error'}`; }
-    }
-    return result;
+  private async summary(info: DaemonInfo, _rpc: Rpc, remote: NativeRemote): Promise<Status> {
+    // The restricted default profile reports relay state only and never enumerates device records.
+    return { daemon: 'running', ...remote, cliVersion: info.cliVersion, appServerVersion: info.appServerVersion, pairing: 'unknown', pairedDevices: null };
   }
   async status(): Promise<Status> {
     const info = await this.host.version();

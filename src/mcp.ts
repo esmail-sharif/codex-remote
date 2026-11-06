@@ -7,8 +7,14 @@ import { RemoteService } from './service.js';
 import { errorResult } from './errors.js';
 import { pairingPng, pairingText } from './pairing.js';
 
-export function createMcpServer(service = new RemoteService()) {
+export interface McpOptions {
+  /** Opt in to host administration tools. Disabled unless explicitly enabled by the operator. */
+  adminTools?: boolean;
+}
+
+export function createMcpServer(service = new RemoteService(), options: McpOptions = {}) {
   const server = new McpServer({ name: 'codex-remote', version });
+  const adminTools = options.adminTools ?? process.env.CODEX_REMOTE_ENABLE_ADMIN_TOOLS === '1';
   const tool = (name: string, description: string, inputSchema: z.ZodRawShape, readOnly: boolean, destructive: boolean, idempotent: boolean, run: (args: any) => Promise<CallToolResult>) => {
     server.registerTool(name, { description, inputSchema, annotations: { readOnlyHint: readOnly, destructiveHint: destructive, idempotentHint: idempotent, openWorldHint: true } }, async args => {
       try { return await run(args); }
@@ -16,18 +22,24 @@ export function createMcpServer(service = new RemoteService()) {
     });
   };
   const result = (value: unknown): CallToolResult => ({ content: [{ type: 'text', text: JSON.stringify(value, null, 2) }], structuredContent: { result: value } });
-  tool('remote_status', 'Read native remote-access status and paired-device count without starting or changing the daemon. Relay connected and phone paired are separate states.', {}, true, false, true, async () => result(await service.status()));
-  tool('remote_enable', 'Enable persistent ChatGPT phone access through the existing Codex socket, keeping local sessions running. Starts the native daemon only if absent; never restarts a running server.', {}, false, false, true, async () => result(await service.enable()));
-  tool('remote_pair', 'Show a fresh remote-session pairing QR image, link, manual code, and expiration for ChatGPT Android or iPhone. Enables persistent remote access if needed. Existing pairings are preserved; only call when pairing/QR is requested.', {}, false, false, false, async () => {
+
+  // Restricted default surface: relay status and an explicitly requested phone pairing QR.
+  tool('remote_status', 'Read native relay status without starting the daemon, changing settings, or enumerating paired-device records. Relay connectivity is not proof that a phone is paired.', {}, true, false, true, async () => result(await service.status()));
+  tool('remote_pair', 'Only when the user explicitly requests phone pairing, create a short-lived QR/link/code. This enables persistent native remote access if needed; access remains enabled until an operator disables it locally. Existing pairings are preserved.', {}, false, false, false, async () => {
     const pair = await service.qr(); const png = await pairingPng(pair); const output = { ...pair, qrText: pairingText(pair) };
     return { content: [
-      { type: 'text', text: JSON.stringify({ ...output, instructions: 'Show the QR image when supported. In terminal conversation output, reproduce qrText exactly inside a fenced code block, then provide the pairing link and expiration. Scan with Android or iPhone and finish in ChatGPT using the same account/workspace. Existing pairings remain valid. Use remote_devices_list after pairing to confirm the device.' }, null, 2) },
+      { type: 'text', text: JSON.stringify({ ...output, instructions: 'Show the QR image when supported. In terminal conversation output, reproduce qrText exactly inside a fenced code block, then provide the pairing link and expiration. Scan with Android or iPhone and finish in ChatGPT using the same account/workspace. Keep the QR and pairing code private. Persistent remote access remains enabled until an operator disables it locally.' }, null, 2) },
       { type: 'image', data: png.toString('base64'), mimeType: 'image/png' },
     ], structuredContent: { result: output } };
   });
-  tool('remote_disable', 'Disable persistent phone access without stopping Codex or local sessions. This disconnects remote clients, including the caller when used from a phone; it preserves paired devices.', {}, false, true, true, async () => result(await service.disable()));
-  tool('remote_devices_list', 'List devices paired with this host, including exact IDs, names, platform, and last-seen timestamps. Does not issue a new pairing code.', {}, true, false, true, async () => result(await service.devices()));
-  tool('remote_device_revoke', 'Revoke one explicitly chosen device from this host using its client_id from remote_devices_list. Disconnects that device without stopping local Codex sessions.', { client_id: z.string().min(1).max(200) }, false, true, false, async args => result(await service.revoke(args.client_id)));
+
+  // These administration tools remain available for a deliberate future opt-in only.
+  if (adminTools) {
+    tool('remote_enable', 'ADMIN ONLY: Enable persistent ChatGPT phone access through the existing Codex socket. Starts the native daemon only if absent; never restarts a running server.', {}, false, false, true, async () => result(await service.enable()));
+    tool('remote_disable', 'ADMIN ONLY: Disable persistent phone access without stopping Codex or local sessions. This disconnects remote clients but preserves paired devices.', {}, false, true, true, async () => result(await service.disable()));
+    tool('remote_devices_list', 'ADMIN ONLY: List paired devices and their identifiers, platform, and last-seen timestamps.', {}, true, false, true, async () => result(await service.devices()));
+    tool('remote_device_revoke', 'ADMIN ONLY: Revoke one explicitly chosen device using its client_id from remote_devices_list.', { client_id: z.string().min(1).max(200) }, false, true, false, async args => result(await service.revoke(args.client_id)));
+  }
   return server;
 }
 
