@@ -59,7 +59,7 @@ test('administrative MCP tools appear only after explicit opt-in', async t => {
 test('built CLI emits clean machine-readable status, pairing and validation errors', async t => {
   const { nativeStub } = await fixture(t); const env = { ...process.env, CODEX_REMOTE_CODEX_BIN: nativeStub };
   const run = (args: string[], extraEnv: NodeJS.ProcessEnv = {}) => execute(process.execPath, ['dist/cli.js', ...args], { env: { ...env, ...extraEnv } });
-  const status = JSON.parse((await run(['status', '--json'])).stdout); assert.equal(status.pairing, 'paired');
+  const status = JSON.parse((await run(['status', '--json'])).stdout); assert.equal(status.pairing, 'unknown'); assert.equal(status.pairedDevices, null);
   const pair = JSON.parse((await run(['qr', '--json'])).stdout); assert.equal(new URL(pair.pairingUrl).hostname, 'chatgpt.com');
   assert.equal((await run(['--version'])).stdout.trim(), version);
   const help = (await run(['--help'])).stdout;

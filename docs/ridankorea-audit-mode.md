@@ -4,6 +4,12 @@ This document describes the intended host configuration for the restricted Codex
 
 ## Isolation requirements
 
+Create the account before using the snapshot commands below:
+
+```sh
+sudo adduser --system --group --home /home/codex-audit --shell /bin/bash codex-audit
+```
+
 1. Keep production at `/var/www/ridankorea`, its PM2 user, Node.js 22 runtime, Nginx, and Neon configuration unchanged.
 2. Create a dedicated unprivileged Linux account named `codex-audit`.
 3. Give it access only to a sanitized, separate copy of the source. Do not mount or grant access to the production project directory.

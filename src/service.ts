@@ -54,7 +54,7 @@ export class RemoteService {
   }
   async status(): Promise<Status> {
     const info = await this.host.version();
-    if (!running(info)) return { daemon: 'stopped', status: 'unavailable', pairing: 'unknown', pairedDevices: null, cliVersion: info.cliVersion, diagnostic: 'Run codex-remote enable to start remote access.' };
+    if (!running(info)) return { daemon: 'stopped', status: 'unavailable', pairing: 'unknown', pairedDevices: null, cliVersion: info.cliVersion, diagnostic: 'The remote daemon is stopped. Status will not start it; request a pairing QR only when you intend to enable persistent remote access.' };
     return this.use(info, async rpc => this.summary(info, rpc, await this.read(rpc)));
   }
   async enable(): Promise<Status> {
@@ -78,7 +78,7 @@ export class RemoteService {
     const info = await this.host.version();
     return this.use(info, async rpc => {
       const remote = await this.read(rpc);
-      if (remote.status !== 'connected' || !remote.environmentId) throw new RemoteError('remote_not_ready', `Remote access is ${remote.status}. Run codex-remote enable, then check status before pairing.`);
+      if (remote.status !== 'connected' || !remote.environmentId) throw new RemoteError('remote_not_ready', `Remote access is ${remote.status}. Request a new QR to enable it, or check Codex sign-in and workspace policy.`);
       const pair = valid(pairSchema, await rpc.request('remoteControl/pairing/start', { manualCode: true }));
       if (pair.environmentId !== remote.environmentId) throw new RemoteError('protocol_error', 'The pairing environment changed. Check host status before requesting a new code.');
       if (pair.expiresAt * 1000 <= Date.now()) throw new RemoteError('pairing_expired', 'Codex returned an expired pairing code. Request a new code.');

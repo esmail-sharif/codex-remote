@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — Ridan Korea audit-only profile
+
+- Restricted default MCP tools to relay status and explicitly requested QR pairing.
+- Removed paired-device enumeration from the default status operation.
+- Gated remote enable/disable and paired-device management behind `CODEX_REMOTE_ENABLE_ADMIN_TOOLS=1`.
+- Disabled Terminal Extensions and `/qr` registration unless explicitly opted in.
+- Added read-only audit deployment guidance for a dedicated Linux user and sanitized source snapshot.
+
 ## 0.2.1
 
 - Updated shared-host references to Codex Command Extensions. Added official-directory draft ZIP packaging, listing metadata, icons, public data/license information and proposed review cases.
@@ -14,12 +22,3 @@
 ## 0.1.0 — 2026-10-17
 
 Initial public release.
-
-- Native ChatGPT phone pairing for terminal Codex on Linux.
-- QR image, terminal QR, phone link, manual code, and expiration.
-- Persistent remote access controls without restarting active sessions.
-- Paired-device listing and selected-device revocation.
-- Six MCP tools and a pairing skill for conversational access.
-- Standalone CLI, built GitHub release archive, and installation guide.
-
-Tested with Node 24+ and Codex 0.163.0. Android pairing and existing-chat messaging were verified. iPhone, new mobile chats, approvals, and active-task steering require further end-to-end verification. The optional `/qr` autocomplete integration belongs to the separate Codex Folders launcher.

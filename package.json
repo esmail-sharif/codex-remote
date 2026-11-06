@@ -1,17 +1,17 @@
 {
   "name": "codex-remote",
-  "version": "0.2.1",
-  "description": "Use Codex CLI from your phone through ChatGPT mobile QR pairing. Manage paired devices and remote access. Linux and Android verified; community plugin.",
+  "version": "0.3.0",
+  "description": "Restricted Codex phone pairing for read-only Ridan Korea audit sessions.",
   "type": "module",
   "license": "MIT",
   "author": "Cheaux",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Cheaux/codex-remote.git"
+    "url": "git+https://github.com/esmail-sharif/codex-remote.git"
   },
-  "homepage": "https://cheaux.github.io/codex-remote/",
+  "homepage": "https://github.com/esmail-sharif/codex-remote/tree/ridankorea-audit-only",
   "bugs": {
-    "url": "https://github.com/Cheaux/codex-remote/issues"
+    "url": "https://github.com/esmail-sharif/codex-remote/issues"
   },
   "keywords": [
     "android",
