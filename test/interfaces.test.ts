@@ -33,14 +33,14 @@ test('pairing PNG decodes to the exact native pairing URL', async t => {
   }
   assert.equal(jsQR(pixels, width, height)?.data, pair.pairingUrl, 'conversation text QR decodes independently');
 });
-test('MCP exposes the six tools, returns a real QR image, and marks failures as errors', async t => {
+test('default MCP exposes only status and explicit QR pairing', async t => {
   const { service, state } = await fixture(t); const server = createMcpServer(service);
   const client = new Client({ name: 'test', version: '1' }); const [a, b] = InMemoryTransport.createLinkedPair();
   await server.connect(a); await client.connect(b); t.after(async () => { await client.close(); await server.close(); });
   const tools = (await client.listTools()).tools;
-  assert.deepEqual(tools.map(t => t.name).sort(), ['remote_status', 'remote_enable', 'remote_pair', 'remote_disable', 'remote_devices_list', 'remote_device_revoke'].sort());
-  assert.equal(tools.find(t => t.name === 'remote_status')?.annotations?.readOnlyHint, true);
-  assert.equal(tools.find(t => t.name === 'remote_disable')?.annotations?.destructiveHint, true);
+  assert.deepEqual(tools.map(tool => tool.name).sort(), ['remote_pair', 'remote_status']);
+  assert.equal(tools.find(tool => tool.name === 'remote_status')?.annotations?.readOnlyHint, true);
+  assert.equal(tools.some(tool => tool.name.includes('revoke') || tool.name.includes('disable') || tool.name.includes('devices')), false);
   const response = await client.callTool({ name: 'remote_pair', arguments: {} });
   const content = response.content as Array<{ type: string; data?: string; text?: string }>;
   assert.equal(content[1].type, 'image');
@@ -49,12 +49,24 @@ test('MCP exposes the six tools, returns a real QR image, and marks failures as 
   state.errors.set('remoteControl/status/read', { code: -32000, message: 'Blocked by workspace policy' });
   assert.equal((await client.callTool({ name: 'remote_status', arguments: {} })).isError, true);
 });
+test('administrative MCP tools appear only after explicit opt-in', async t => {
+  const { service } = await fixture(t); const server = createMcpServer(service, { adminTools: true });
+  const client = new Client({ name: 'admin-test', version: '1' }); const [a, b] = InMemoryTransport.createLinkedPair();
+  await server.connect(a); await client.connect(b); t.after(async () => { await client.close(); await server.close(); });
+  const names = (await client.listTools()).tools.map(tool => tool.name).sort();
+  assert.deepEqual(names, ['remote_device_revoke', 'remote_devices_list', 'remote_disable', 'remote_enable', 'remote_pair', 'remote_status']);
+});
 test('built CLI emits clean machine-readable status, pairing and validation errors', async t => {
   const { nativeStub } = await fixture(t); const env = { ...process.env, CODEX_REMOTE_CODEX_BIN: nativeStub };
-  const run = (args: string[]) => execute(process.execPath, ['dist/cli.js', ...args], { env });
+  const run = (args: string[], extraEnv: NodeJS.ProcessEnv = {}) => execute(process.execPath, ['dist/cli.js', ...args], { env: { ...env, ...extraEnv } });
   const status = JSON.parse((await run(['status', '--json'])).stdout); assert.equal(status.pairing, 'paired');
   const pair = JSON.parse((await run(['qr', '--json'])).stdout); assert.equal(new URL(pair.pairingUrl).hostname, 'chatgpt.com');
   assert.equal((await run(['--version'])).stdout.trim(), version);
+  const help = (await run(['--help'])).stdout;
+  assert.match(help, /remote_pair/); assert.doesNotMatch(help, /remote_enable|remote_disable|devices revoke|terminal enable/);
+  await assert.rejects(run(['disable', '--json']), (error: any) => JSON.parse(error.stdout).error.code === 'feature_disabled');
+  await assert.rejects(run(['terminal', 'enable', '--json']), (error: any) => JSON.parse(error.stdout).error.code === 'feature_disabled');
+  assert.match((await run(['--help'], { CODEX_REMOTE_ENABLE_ADMIN_TOOLS: '1' })).stdout, /codex-remote disable/);
   await assert.rejects(run(['devices', 'revoke', '--json']), (error: any) => { assert.equal(error.code, 1); assert.equal(JSON.parse(error.stdout).error.code, 'invalid_arguments'); return true; });
   await assert.rejects(run(['qr', 'unexpected', '--json']), (error: any) => { assert.equal(JSON.parse(error.stdout).error.code, 'invalid_arguments'); return true; });
 });
@@ -63,9 +75,9 @@ test('packaged stdio MCP is callable without stdout diagnostics contaminating th
   const transport = new StdioClientTransport({ command: process.execPath, args: ['dist/cli.js', 'serve'], env: { PATH: process.env.PATH || '', CODEX_REMOTE_CODEX_BIN: nativeStub }, stderr: 'pipe' });
   const client = new Client({ name: 'stdio-test', version: '1' });
   await client.connect(transport); t.after(() => client.close());
-  assert.equal((await client.listTools()).tools.length, 6);
-  const result = await client.callTool({ name: 'remote_devices_list', arguments: {} });
-  assert.equal(result.isError, undefined); assert.match(JSON.stringify(result.structuredContent), /phone-one/);
+  assert.deepEqual((await client.listTools()).tools.map(tool => tool.name).sort(), ['remote_pair', 'remote_status']);
+  const result = await client.callTool({ name: 'remote_status', arguments: {} });
+  assert.equal(result.isError, undefined); assert.match(JSON.stringify(result.structuredContent), /connected/);
 });
 test('/qr opens a scannable terminal view and returns to the retained chat', async t => {
   const { nativeStub, root, state } = await fixture(t);

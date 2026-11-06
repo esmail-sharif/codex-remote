@@ -7,9 +7,10 @@ import { SocketRpc } from '../src/rpc.js';
 test('status distinguishes relay readiness from paired phones and never changes the host', async t => {
   const { service, state } = await fixture(t); state.devices = [];
   const status = await service.status();
-  assert.equal(status.status, 'connected'); assert.equal(status.pairing, 'unpaired'); assert.equal(status.pairedDevices, 0);
+  assert.equal(status.status, 'connected'); assert.equal(status.pairing, 'unknown'); assert.equal(status.pairedDevices, null);
   assert.deepEqual(state.commands, [['app-server', 'daemon', 'version']]);
   assert.equal(state.calls.some(c => c.method === 'remoteControl/enable'), false);
+  assert.equal(state.calls.some(c => c.method === 'remoteControl/client/list'), false, 'status does not enumerate device records');
 });
 test('enable and disable persist through socket RPCs without daemon lifecycle changes', async t => {
   const { service, state } = await fixture(t, 'disabled');
@@ -88,10 +89,12 @@ test('unsupported methods, malformed messages, incompatible results, disconnects
     });
   }
 });
-test('device-list failures do not falsely change a connected relay to unpaired', async t => {
+test('default relay status does not request paired-device inventory', async t => {
   const { service, state } = await fixture(t);
   state.errors.set('remoteControl/client/list', { code: -32000, message: 'Policy disallows device listing' });
-  const status = await service.status(); assert.equal(status.status, 'connected'); assert.equal(status.pairing, 'unknown'); assert.match(status.diagnostic || '', /Policy/);
+  const status = await service.status();
+  assert.equal(status.status, 'connected'); assert.equal(status.pairing, 'unknown'); assert.equal(status.pairedDevices, null);
+  assert.equal(state.calls.some(c => c.method === 'remoteControl/client/list'), false);
 });
 test('daemon output tolerates native diagnostic lines and rejects incompatible interfaces', () => {
   assert.equal(parseDaemonOutput('noise\n{"status":"running","socketPath":"/tmp/native.sock"}\n').status, 'running');
