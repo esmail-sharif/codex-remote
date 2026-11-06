@@ -25,7 +25,7 @@ export function createMcpServer(service = new RemoteService(), options: McpOptio
 
   // Restricted default surface: relay status and an explicitly requested phone pairing QR.
   tool('remote_status', 'Read native relay status without starting the daemon, changing settings, or enumerating paired-device records. Relay connectivity is not proof that a phone is paired.', {}, true, false, true, async () => result(await service.status()));
-  tool('remote_pair', 'Only when the user explicitly requests phone pairing, create a short-lived QR/link/code. This enables persistent native remote access if needed; access remains enabled until an operator disables it locally. Existing pairings are preserved.', {}, false, false, false, async () => {
+  tool('remote_pair', 'Only when the user explicitly requests phone pairing, create a short-lived QR/link/code. This enables persistent native remote access if needed; access remains enabled until an operator disables it locally. Existing pairings are preserved.', {}, false, true, false, async () => {
     const pair = await service.qr(); const png = await pairingPng(pair); const output = { ...pair, qrText: pairingText(pair) };
     return { content: [
       { type: 'text', text: JSON.stringify({ ...output, instructions: 'Show the QR image when supported. In terminal conversation output, reproduce qrText exactly inside a fenced code block, then provide the pairing link and expiration. Scan with Android or iPhone and finish in ChatGPT using the same account/workspace. Keep the QR and pairing code private. Persistent remote access remains enabled until an operator disables it locally.' }, null, 2) },
