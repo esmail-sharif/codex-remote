@@ -16,9 +16,8 @@ export type RemoteDevice = z.infer<typeof deviceSchema>;
 export type Pairing = { pairingUrl: string; manualPairingCode: string | null; expiresAt: number; expiresAtIso: string };
 export type Status = {
   daemon: 'running' | 'stopped'; status: NativeRemote['status'] | 'unavailable';
-  serverName?: string; installationId?: string; environmentId?: string | null;
-  cliVersion?: string; appServerVersion?: string;
-  pairing: 'paired' | 'unpaired' | 'unknown'; pairedDevices: number | null; diagnostic?: string;
+  serverName?: string; cliVersion?: string; appServerVersion?: string;
+  pairing: 'unknown'; pairedDevices: null; diagnostic?: string;
 };
 type Connector = (socketPath: string) => Promise<Rpc>;
 function valid<T>(schema: z.ZodType<T>, value: unknown): T {
