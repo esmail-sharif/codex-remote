@@ -10,7 +10,8 @@ test('default status reads relay state only and never changes or enumerates the 
   assert.equal(status.status, 'connected'); assert.equal(status.pairing, 'unknown'); assert.equal(status.pairedDevices, null);
   assert.deepEqual(state.commands, [['app-server', 'daemon', 'version']]);
   assert.equal(state.calls.some(c => c.method === 'remoteControl/enable'), false);
-  assert.equal(state.calls.some(c => c.method === 'remoteControl/client/list'), false, 'status does not enumerate device records');\n  assert.equal('environmentId' in status, false); assert.equal('installationId' in status, false);
+  assert.equal(state.calls.some(c => c.method === 'remoteControl/client/list'), false, 'status does not enumerate device records');
+  assert.equal('environmentId' in status, false); assert.equal('installationId' in status, false);
 });
 test('enable and disable persist through socket RPCs without daemon lifecycle changes', async t => {
   const { service, state } = await fixture(t, 'disabled');

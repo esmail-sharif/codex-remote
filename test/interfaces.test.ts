@@ -39,7 +39,8 @@ test('default MCP exposes only status and explicit QR pairing', async t => {
   await server.connect(a); await client.connect(b); t.after(async () => { await client.close(); await server.close(); });
   const tools = (await client.listTools()).tools;
   assert.deepEqual(tools.map(tool => tool.name).sort(), ['remote_pair', 'remote_status']);
-  assert.equal(tools.find(tool => tool.name === 'remote_status')?.annotations?.readOnlyHint, true);\n  assert.equal(tools.find(tool => tool.name === 'remote_pair')?.annotations?.destructiveHint, true, 'QR pairing requires explicit approval because it enables persistent remote access');
+  assert.equal(tools.find(tool => tool.name === 'remote_status')?.annotations?.readOnlyHint, true);
+  assert.equal(tools.find(tool => tool.name === 'remote_pair')?.annotations?.destructiveHint, true, 'QR pairing requires explicit approval because it enables persistent remote access');
   assert.equal(tools.some(tool => tool.name.includes('revoke') || tool.name.includes('disable') || tool.name.includes('devices')), false);
   const response = await client.callTool({ name: 'remote_pair', arguments: {} });
   const content = response.content as Array<{ type: string; data?: string; text?: string }>;
