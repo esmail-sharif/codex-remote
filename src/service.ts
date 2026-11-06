@@ -13,7 +13,7 @@ const devicesSchema = z.object({ data: z.array(deviceSchema), nextCursor: z.stri
 const pairSchema = z.object({ pairingCode: z.string().min(1), manualPairingCode: z.string().nullable(), environmentId: z.string(), expiresAt: z.number().int().positive() });
 export type NativeRemote = z.infer<typeof remoteSchema>;
 export type RemoteDevice = z.infer<typeof deviceSchema>;
-export type Pairing = z.infer<typeof pairSchema> & { pairingUrl: string; expiresAtIso: string };
+export type Pairing = { pairingUrl: string; manualPairingCode: string | null; expiresAtIso: string };
 export type Status = {
   daemon: 'running' | 'stopped'; status: NativeRemote['status'] | 'unavailable';
   serverName?: string; installationId?: string; environmentId?: string | null;
@@ -50,7 +50,7 @@ export class RemoteService {
   }
   private async summary(info: DaemonInfo, _rpc: Rpc, remote: NativeRemote): Promise<Status> {
     // The restricted default profile reports relay state only and never enumerates device records.
-    return { daemon: 'running', ...remote, cliVersion: info.cliVersion, appServerVersion: info.appServerVersion, pairing: 'unknown', pairedDevices: null };
+    return { daemon: 'running', status: remote.status, serverName: remote.serverName, cliVersion: info.cliVersion, appServerVersion: info.appServerVersion, pairing: 'unknown', pairedDevices: null };
   }
   async status(): Promise<Status> {
     const info = await this.host.version();
@@ -86,7 +86,7 @@ export class RemoteService {
       let expiresAtIso: string;
       try { expiresAtIso = new Date(pair.expiresAt * 1000).toISOString(); }
       catch { throw new RemoteError('protocol_error', 'Codex returned an invalid pairing expiration.'); }
-      return { ...pair, pairingUrl: url.toString(), expiresAtIso };
+      return { pairingUrl: url.toString(), manualPairingCode: pair.manualPairingCode, expiresAtIso };
     });
   }
   /** Requesting a QR explicitly enables persistent remote access when necessary. */

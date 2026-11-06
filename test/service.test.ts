@@ -4,13 +4,13 @@ import { fixture, device } from './fixture.js';
 import { parseDaemonOutput } from '../src/native.js';
 import { SocketRpc } from '../src/rpc.js';
 
-test('status distinguishes relay readiness from paired phones and never changes the host', async t => {
+test('default status reads relay state only and never changes or enumerates the host', async t => {
   const { service, state } = await fixture(t); state.devices = [];
   const status = await service.status();
   assert.equal(status.status, 'connected'); assert.equal(status.pairing, 'unknown'); assert.equal(status.pairedDevices, null);
   assert.deepEqual(state.commands, [['app-server', 'daemon', 'version']]);
   assert.equal(state.calls.some(c => c.method === 'remoteControl/enable'), false);
-  assert.equal(state.calls.some(c => c.method === 'remoteControl/client/list'), false, 'status does not enumerate device records');
+  assert.equal(state.calls.some(c => c.method === 'remoteControl/client/list'), false, 'status does not enumerate device records');\n  assert.equal(status.environmentId, undefined); assert.equal(status.installationId, undefined);
 });
 test('enable and disable persist through socket RPCs without daemon lifecycle changes', async t => {
   const { service, state } = await fixture(t, 'disabled');
